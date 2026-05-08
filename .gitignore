@@ -6,3 +6,9 @@ my_tuned_model/
 *.bin
 *.safetensors
 *.zip
+node_modules/
+dist/
+.env
+npm-debug.log*
+*.log
+ui-*.png

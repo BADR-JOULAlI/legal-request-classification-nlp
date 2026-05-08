@@ -2,7 +2,7 @@
 
 This repository contains a text classification project for categorizing legal questions into a small set of practice areas. The model is based on `distilbert-base-cased` and is trained with the Hugging Face `transformers` and `datasets` libraries.
 
-The work is implemented in a notebook and covers the full experimentation flow: dataset preparation, label encoding, tokenization, model fine-tuning, evaluation, hyperparameter search, and inference with a published Hugging Face model.
+The repository also includes a small React and Node.js application for testing the published model through a browser interface.
 
 ## Project Scope
 
@@ -19,7 +19,16 @@ The goal is to build a compact NLP model that can route short legal questions to
 
 ```text
 .
+├── client/
+│   ├── src/
+│   ├── index.html
+│   └── package.json
+├── server/
+│   ├── src/
+│   └── package.json
 ├── legal-request-classification-nlp-ipynb (1).ipynb
+├── .env.example
+├── package.json
 ├── README.md
 ├── LICENSE
 └── .gitignore
@@ -96,9 +105,87 @@ result = classifier("I need help with tax law")
 print(result)
 ```
 
+## Web Application
+
+The full-stack app provides a simple interface for submitting a legal request and visualizing the model output.
+
+Backend:
+
+- Node.js
+- Express
+- Local Python inference worker using Hugging Face `transformers`
+
+Frontend:
+
+- React
+- Vite
+- Lucide icons
+
+### Setup
+
+Install the JavaScript dependencies from the repository root:
+
+```bash
+npm install
+```
+
+Create a local environment file:
+
+```bash
+copy .env.example .env
+```
+
+The default configuration uses a local Python inference worker because the published model is not deployed through a Hugging Face Inference Provider.
+
+```env
+PORT=5000
+MODEL_ID=sailu4/legal-request-classification-nlp-model
+INFERENCE_ENGINE=python
+PYTHON_BIN=python
+HUGGINGFACE_API_TOKEN=
+ALLOW_DEMO_FALLBACK=true
+```
+
+Before running predictions locally, make sure the Python dependencies are installed:
+
+```bash
+pip install transformers torch
+```
+
+Run the backend and frontend together:
+
+```bash
+npm run dev
+```
+
+The app will be available at:
+
+```text
+http://127.0.0.1:5173
+```
+
+The API runs on:
+
+```text
+http://localhost:5000
+```
+
+The backend exposes:
+
+- `GET /api/health`
+- `POST /api/predict`
+
+Example API request:
+
+```bash
+curl -X POST http://localhost:5000/api/predict \
+  -H "Content-Type: application/json" \
+  -d "{\"text\":\"I need help with tax law\"}"
+```
+
 ## Requirements
 
-The notebook uses the following main libraries:
+The notebook uses the following main Python libraries:
 
 - `transformers`
 - `datasets`

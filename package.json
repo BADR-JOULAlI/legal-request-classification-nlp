@@ -1,0 +1,20 @@
+{
+  "name": "legal-request-classification-app",
+  "version": "1.0.0",
+  "private": true,
+  "description": "Full-stack app for visualizing legal request classification predictions.",
+  "workspaces": [
+    "client",
+    "server"
+  ],
+  "scripts": {
+    "dev": "concurrently \"npm run dev --workspace server\" \"npm run dev --workspace client\"",
+    "build": "npm run build --workspace client",
+    "start": "npm run start --workspace server",
+    "lint": "npm run lint --workspace client"
+  },
+  "devDependencies": {
+    "concurrently": "^9.2.1",
+    "playwright": "^1.59.1"
+  }
+}
