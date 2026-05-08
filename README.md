@@ -1,159 +1,88 @@
-# Legal Request Classification (NLP - DistilBERT)
+# Legal Request Classification with DistilBERT
 
-## 1. Overview
+This repository contains a text classification project for categorizing legal questions into a small set of practice areas. The model is based on `distilbert-base-cased` and is trained with the Hugging Face `transformers` and `datasets` libraries.
 
-This project implements a full NLP pipeline to classify legal text into predefined categories using transformer-based models.
+The work is implemented in a notebook and covers the full experimentation flow: dataset preparation, label encoding, tokenization, model fine-tuning, evaluation, hyperparameter search, and inference with a published Hugging Face model.
 
-It covers:
+## Project Scope
 
-* Data preprocessing
-* Feature engineering
-* Model training
-* Hyperparameter optimization
-* Evaluation and inference
+The classifier is trained on a subset of the `jonathanli/law-stack-exchange` dataset. Four legal categories are used:
 
----
+- `criminal-law`
+- `employment`
+- `tax-law`
+- `trademark`
 
-## 2. Architecture
+The goal is to build a compact NLP model that can route short legal questions to the most relevant category. This type of classification can be useful as a first step in legal support triage, document routing, or topic-based search.
 
-Pipeline:
+## Repository Structure
 
-Dataset → Cleaning → Encoding → Tokenization → Model → Training → Evaluation → Inference
-
----
-
-## 3. Dataset
-
-Source:
-jonathanli/law-stack-exchange
-
-### Preprocessing
-
-* Removed irrelevant metadata columns
-* Renamed columns:
-
-  * `body → text`
-  * `text_label → label`
-* Encoded labels using `ClassLabel`
-
-### Labels
-
-* criminal-law
-* employment
-* tax-law
-* trademark
-
----
-
-## 4. Data Pipeline
-
-### Tokenization
-
-```python
-def tokenize_function(examples):
-    return tokenizer(
-        examples["text"],
-        padding="max_length",
-        truncation=True
-    )
+```text
+.
+├── legal-request-classification-nlp-ipynb (1).ipynb
+├── README.md
+├── LICENSE
+└── .gitignore
 ```
 
-Applied with:
+## Workflow
 
-```python
-dataset.map(tokenize_function, batched=True)
+The notebook follows a standard supervised text classification pipeline:
+
+```text
+Dataset -> Cleaning -> Label encoding -> Tokenization -> Training -> Evaluation -> Inference
 ```
 
-### Features
+During preprocessing, unused metadata columns are removed and the dataset is reduced to the fields required by the model:
 
-* input_ids
-* attention_mask
-* label
+- `text`: the legal question content
+- `label`: the target legal category
 
----
+Labels are converted with Hugging Face `ClassLabel`, and the text is tokenized with the DistilBERT tokenizer using truncation and fixed-length padding.
 
-## 5. Model
+## Model
 
-Base model:
-distilbert-base-cased
+The model uses `AutoModelForSequenceClassification` with `distilbert-base-cased` as the base checkpoint. The classification head is configured for the four selected labels, with explicit `id2label` and `label2id` mappings to keep predictions readable during inference.
 
-```python
-AutoModelForSequenceClassification.from_pretrained(
-    model_name,
-    num_labels=NUM_LABELS,
-    id2label=id2label,
-    label2id=label2id
-)
+Main training setup:
+
+- Base model: `distilbert-base-cased`
+- Task: multi-class text classification
+- Evaluation metric: accuracy
+- Trainer API: Hugging Face `Trainer`
+- Hyperparameter tuning: Optuna
+
+## Training and Optimization
+
+Initial fine-tuning was run with:
+
+- Learning rate: `2e-5`
+- Batch size: `8`
+- Epochs: `10`
+- Weight decay: `0.01`
+- Evaluation strategy: per epoch
+
+Optuna was then used to search over learning rate, batch size, and number of epochs. The best configuration found in the notebook was:
+
+```text
+learning_rate: 9.001905212697694e-05
+per_device_train_batch_size: 16
+num_train_epochs: 5
 ```
 
----
+## Results
 
-## 6. Training
+The model reached approximately `95%` validation accuracy during the initial training run. In the Optuna search, the best trial reached about `96.4%` accuracy.
 
-```python
-TrainingArguments(
-    output_dir="fast_model",
-    learning_rate=2e-5,
-    per_device_train_batch_size=8,
-    per_device_eval_batch_size=8,
-    num_train_epochs=10,
-    weight_decay=0.01,
-    fp16=True,
-    evaluation_strategy="epoch",
-    save_strategy="epoch"
-)
-```
+These results should be interpreted in the context of the selected four-class subset and the sampled dataset size. Further validation on a larger and more diverse legal dataset would be needed before using the model in a production setting.
 
-Trainer:
+## Inference
 
-```python
-trainer = Trainer(
-    model=model,
-    args=training_args,
-    train_dataset=tokenized_train,
-    eval_dataset=tokenized_val,
-    compute_metrics=compute_metrics
-)
-```
+A trained version of the model is available on Hugging Face:
 
----
+[sailu4/legal-request-classification-nlp-model](https://huggingface.co/sailu4/legal-request-classification-nlp-model)
 
-## 7. Evaluation
-
-Metric:
-Accuracy
-
-```python
-metric = evaluate.load("accuracy")
-```
-
----
-
-## 8. Hyperparameter Optimization
-
-Using Optuna:
-
-* Learning rate
-* Batch size
-* Number of epochs
-
-Best result:
-
-* learning_rate ≈ 9e-5
-* batch_size = 16
-* epochs = 5
-
----
-
-## 9. Results
-
-* Accuracy: ~95%
-* Stable convergence
-* Good generalization
-
----
-
-## 10. Inference
+Example usage:
 
 ```python
 from transformers import pipeline
@@ -163,59 +92,50 @@ classifier = pipeline(
     model="sailu4/legal-request-classification-nlp-model"
 )
 
-classifier("I need help with tax law")
+result = classifier("I need help with tax law")
+print(result)
 ```
 
----
+## Requirements
 
-## 11. Sample Evaluation
+The notebook uses the following main libraries:
 
-```python
-result = classifier(sample_text)
+- `transformers`
+- `datasets`
+- `evaluate`
+- `torch`
+- `optuna`
+- `pandas`
 
-print("True:", sample_label)
-print("Pred:", result[0]["label"])
-print("Score:", result[0]["score"])
+Install the core dependencies with:
+
+```bash
+pip install transformers datasets evaluate torch optuna pandas
 ```
 
----
+If you are running the notebook in a GPU environment, make sure that the installed PyTorch version matches your CUDA setup.
 
-## 12. Model Deployment
+## Limitations
 
-Hugging Face:
-https://huggingface.co/sailu4/legal-request-classification-nlp-model
+- The classifier is trained on only four legal categories.
+- The dataset subset is relatively small.
+- The model predicts broad categories, not legal advice or legal outcomes.
+- Performance may drop on longer, noisier, or jurisdiction-specific legal questions.
 
----
+## Next Steps
 
-## 13. Project Structure
+Potential improvements include:
 
-```
-.
-├── legal-request-classification-nlp/
-    ├── legal-request-classifacation-nlp(1).ipynb
-    ├── README.md
-    └── .gitignore
-```
+- Expanding the number of legal categories
+- Training on a larger and more balanced dataset
+- Comparing DistilBERT with BERT, RoBERTa, or legal-domain language models
+- Adding precision, recall, F1-score, and confusion matrix analysis
+- Packaging the model behind a small API for real-time inference
 
----
+## License
 
-## 14. Limitations
+This project is released under the MIT License.
 
-* Class imbalance
-* Small dataset size
-* Domain-specific scope
-
----
-
-## 15. Future Work
-
-* Add more classes
-* Use larger models (BERT / RoBERTa)
-* Deploy API (FastAPI)
-* Add real-time inference
-
----
-
-## 16. Author
+## Author
 
 Badr Joulali
