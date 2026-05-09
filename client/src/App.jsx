@@ -1,4 +1,26 @@
-import { AlertCircle, BadgeCheck, BrainCircuit, Loader2, Scale, Send, Sparkles } from "lucide-react";
+import {
+  AlertCircle,
+  BarChart3,
+  BookOpen,
+  Brain,
+  BriefcaseBusiness,
+  ChevronDown,
+  Clock3,
+  FileText,
+  Gauge,
+  History,
+  Home,
+  Landmark,
+  Loader2,
+  Lock,
+  Moon,
+  Scale,
+  Send,
+  Settings,
+  ShieldAlert,
+  Tags,
+  Zap
+} from "lucide-react";
 import { useMemo, useState } from "react";
 
 const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
@@ -6,23 +28,23 @@ const API_URL = import.meta.env.VITE_API_URL || "http://localhost:5000";
 const labelMeta = {
   "criminal-law": {
     title: "Criminal Law",
-    color: "#bf3f49",
-    soft: "#fae8e9"
+    color: "#fb5168",
+    icon: ShieldAlert
   },
   employment: {
     title: "Employment",
-    color: "#2f7665",
-    soft: "#e2f4ef"
+    color: "#35d4a8",
+    icon: BriefcaseBusiness
   },
   "tax-law": {
     title: "Tax Law",
-    color: "#9a681f",
-    soft: "#fff1d7"
+    color: "#f9a825",
+    icon: Landmark
   },
   trademark: {
     title: "Trademark",
-    color: "#4f67b0",
-    soft: "#e9edff"
+    color: "#7c5cff",
+    icon: Tags
   }
 };
 
@@ -45,14 +67,27 @@ const samples = [
   }
 ];
 
+const navigationItems = [
+  { label: "Dashboard", icon: Home },
+  { label: "Classify Request", icon: Brain, active: true },
+  { label: "History", icon: History },
+  { label: "Analytics", icon: BarChart3 },
+  { label: "Knowledge Base", icon: BookOpen },
+  { label: "Settings", icon: Settings }
+];
+
 function App() {
-  const [text, setText] = useState(samples[0].text);
+  const [text, setText] = useState(samples[2].text);
   const [result, setResult] = useState(null);
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+  const [processedSeconds, setProcessedSeconds] = useState(null);
 
   const characterCount = text.trim().length;
+  const activeSample = samples.find((sample) => sample.text === text)?.label;
   const activeMeta = result ? labelMeta[result.label] || labelMeta[result.predictions?.[0]?.label] : null;
+  const ActiveIcon = activeMeta?.icon || Gauge;
+  const topScore = Math.round(Number(result?.score || 0) * 100);
 
   const sortedPredictions = useMemo(() => {
     if (!result?.predictions) {
@@ -66,6 +101,7 @@ function App() {
     event.preventDefault();
     setError("");
     setResult(null);
+    setProcessedSeconds(null);
 
     if (!text.trim()) {
       setError("Please enter a legal request.");
@@ -73,6 +109,7 @@ function App() {
     }
 
     setLoading(true);
+    const startedAt = performance.now();
 
     try {
       const response = await fetch(`${API_URL}/api/predict`, {
@@ -87,6 +124,7 @@ function App() {
         throw new Error(payload.error || "Prediction failed.");
       }
 
+      setProcessedSeconds(((performance.now() - startedAt) / 1000).toFixed(1));
       setResult(payload);
     } catch (requestError) {
       setError(requestError.message);
@@ -97,75 +135,138 @@ function App() {
 
   return (
     <main className="app-shell">
+      <aside className="sidebar" aria-label="Main navigation">
+        <div className="brand">
+          <div className="brand-mark">
+            <Scale size={30} aria-hidden="true" />
+          </div>
+          <div>
+            <strong>LawAI</strong>
+            <span>Smart Legal Intelligence</span>
+          </div>
+        </div>
+
+        <nav className="sidebar-nav">
+          {navigationItems.map((item) => {
+            const Icon = item.icon;
+            return (
+              <button className={`nav-item ${item.active ? "active" : ""}`} key={item.label} type="button">
+                <Icon size={21} aria-hidden="true" />
+                <span>{item.label}</span>
+              </button>
+            );
+          })}
+        </nav>
+
+        <div className="insight-card">
+          <div className="insight-icon">
+            <Zap size={22} aria-hidden="true" />
+          </div>
+          <strong>AI-Powered Legal Insights</strong>
+          <p>Advanced NLP model for accurate legal classification.</p>
+          <button type="button">Learn more</button>
+        </div>
+
+        <div className="profile-card">
+          <div className="avatar" aria-hidden="true">
+            BJ
+          </div>
+          <div>
+            <strong>Badr Joulali</strong>
+            <span>Legal NLP Project</span>
+          </div>
+          <ChevronDown size={18} aria-hidden="true" />
+        </div>
+      </aside>
+
       <section className="workspace">
         <header className="topbar">
-          <div className="brand-lockup">
-            <div className="brand-mark">
-              <Scale size={24} aria-hidden="true" />
-            </div>
-            <div>
-              <h1>Legal Request Classification</h1>
-              <p>DistilBERT model viewer</p>
-            </div>
+          <div>
+            <h1>Legal Request Classification</h1>
+            <p>AI-powered legal categorization using DistilBERT model</p>
           </div>
 
-          <div className="model-pill">
-            <BrainCircuit size={18} aria-hidden="true" />
-            <span>sailu4/legal-request-classification-nlp-model</span>
+          <div className="header-actions">
+            <div className="model-pill">
+              <span className="status-dot" />
+              <span>Model: distilbert-base-cased</span>
+              <ChevronDown size={18} aria-hidden="true" />
+            </div>
+            <button className="icon-button" type="button" aria-label="Theme mode">
+              <Moon size={20} aria-hidden="true" />
+            </button>
           </div>
         </header>
 
         <div className="layout-grid">
           <section className="panel input-panel" aria-label="Prediction input">
             <form onSubmit={handleSubmit}>
-              <div className="section-heading">
-                <div>
-                  <span className="eyebrow">Input</span>
-                  <h2>Legal request</h2>
+              <div className="panel-heading">
+                <div className="heading-lockup">
+                  <span className="step-badge">1</span>
+                  <div>
+                    <h2>Your Legal Request</h2>
+                    <p>Enter the details of your legal request</p>
+                  </div>
                 </div>
-                <span className="count">{characterCount}/4000</span>
+                <span className="count">{characterCount} / 4000</span>
               </div>
 
               <textarea
                 value={text}
                 onChange={(event) => setText(event.target.value)}
                 maxLength={4000}
-                placeholder="Paste a legal question here..."
+                placeholder="Describe the legal question or request..."
               />
 
-              <div className="actions-row">
+              <div className="sample-strip">
+                <span>Try examples:</span>
                 <div className="sample-row" aria-label="Sample requests">
                   {samples.map((sample) => (
                     <button
-                      className="sample-button"
+                      className={`sample-button ${activeSample === sample.label ? "active" : ""}`}
                       key={sample.label}
                       type="button"
                       onClick={() => {
                         setText(sample.text);
                         setResult(null);
                         setError("");
+                        setProcessedSeconds(null);
                       }}
                     >
                       {sample.label}
                     </button>
                   ))}
                 </div>
+              </div>
 
-                <button className="submit-button" type="submit" disabled={loading}>
-                  {loading ? <Loader2 className="spin" size={18} aria-hidden="true" /> : <Send size={18} aria-hidden="true" />}
-                  <span>{loading ? "Analyzing" : "Classify"}</span>
-                </button>
+              <button className="submit-button" type="submit" disabled={loading}>
+                {loading ? <Loader2 className="spin" size={20} aria-hidden="true" /> : <Send size={20} aria-hidden="true" />}
+                <span>{loading ? "Classifying Request" : "Classify Request"}</span>
+              </button>
+
+              <div className="secure-note">
+                <Lock size={16} aria-hidden="true" />
+                <span>Your data is secure and confidential</span>
               </div>
             </form>
           </section>
 
           <section className="panel result-panel" aria-label="Prediction result">
-            <div className="section-heading">
-              <div>
-                <span className="eyebrow">Output</span>
-                <h2>Prediction</h2>
+            <div className="panel-heading">
+              <div className="heading-lockup">
+                <span className="step-badge">2</span>
+                <div>
+                  <h2>Classification Result</h2>
+                  <p>AI prediction and confidence scores</p>
+                </div>
               </div>
-              {result?.source && <span className={`source-badge ${result.source}`}>{result.source}</span>}
+              {processedSeconds && (
+                <span className="processed-badge">
+                  <Clock3 size={16} aria-hidden="true" />
+                  Processed in {processedSeconds}s
+                </span>
+              )}
             </div>
 
             {error && (
@@ -177,55 +278,59 @@ function App() {
 
             {!error && !result && (
               <div className="empty-state">
-                <Sparkles size={34} aria-hidden="true" />
-                <span>Ready</span>
+                <FileText size={34} aria-hidden="true" />
+                <strong>Awaiting Classification</strong>
+                <span>Submit a legal request to view model confidence scores.</span>
               </div>
             )}
 
             {result && (
               <>
-                <div
-                  className="winner-card"
-                  style={{
-                    "--label-color": activeMeta?.color || "#1f2937",
-                    "--label-soft": activeMeta?.soft || "#eef2f7"
-                  }}
-                >
-                  <div className="winner-icon">
-                    <BadgeCheck size={28} aria-hidden="true" />
+                <div className="result-summary" style={{ "--accent": activeMeta?.color || "#7c5cff", "--score": topScore }}>
+                  <div className="confidence-ring" aria-label={`Confidence ${topScore}%`}>
+                    <span>{topScore}%</span>
                   </div>
-                  <div>
-                    <span className="winner-label">Top category</span>
+                  <div className="top-category">
+                    <span>Top Category</span>
                     <strong>{activeMeta?.title || result.label}</strong>
+                    <em>{getConfidenceLabel(result.score)}</em>
                   </div>
-                  <span className="winner-score">{formatPercent(result.score)}</span>
                 </div>
 
-                <div className="score-list">
-                  {sortedPredictions.map((prediction) => {
-                    const meta = labelMeta[prediction.label] || {
-                      title: prediction.label,
-                      color: "#1f2937"
-                    };
+                <div className="scores-section">
+                  <h3>Category Confidence Scores</h3>
+                  <div className="score-list">
+                    {sortedPredictions.map((prediction) => {
+                      const meta = labelMeta[prediction.label] || {
+                        title: prediction.label,
+                        color: "#7c5cff",
+                        icon: Gauge
+                      };
+                      const Icon = meta.icon;
 
-                    return (
-                      <div className="score-item" key={prediction.label}>
-                        <div className="score-label">
-                          <span>{meta.title}</span>
-                          <strong>{formatPercent(prediction.score)}</strong>
+                      return (
+                        <div className="score-item" key={prediction.label} style={{ "--accent": meta.color }}>
+                          <div className="score-icon">
+                            <Icon size={21} aria-hidden="true" />
+                          </div>
+                          <div className="score-content">
+                            <div className="score-label">
+                              <span>{meta.title}</span>
+                              <strong>{formatPercent(prediction.score)}</strong>
+                            </div>
+                            <div className="score-track">
+                              <span
+                                className="score-fill"
+                                style={{
+                                  width: `${Math.max(prediction.score * 100, 2)}%`
+                                }}
+                              />
+                            </div>
+                          </div>
                         </div>
-                        <div className="score-track">
-                          <span
-                            className="score-fill"
-                            style={{
-                              width: `${Math.max(prediction.score * 100, 3)}%`,
-                              backgroundColor: meta.color
-                            }}
-                          />
-                        </div>
-                      </div>
-                    );
-                  })}
+                      );
+                    })}
+                  </div>
                 </div>
 
                 {result.warning && (
@@ -238,6 +343,13 @@ function App() {
             )}
           </section>
         </div>
+
+        <div className="tip-banner">
+          <Gauge size={21} aria-hidden="true" />
+          <span>
+            <strong>Tip:</strong> Provide more details in your request to get more accurate classification results.
+          </span>
+        </div>
       </section>
     </main>
   );
@@ -245,6 +357,24 @@ function App() {
 
 function formatPercent(score) {
   return `${Math.round(Number(score || 0) * 100)}%`;
+}
+
+function getConfidenceLabel(score) {
+  const value = Number(score || 0);
+
+  if (value >= 0.85) {
+    return "Very High Confidence";
+  }
+
+  if (value >= 0.65) {
+    return "High Confidence";
+  }
+
+  if (value >= 0.4) {
+    return "Medium Confidence";
+  }
+
+  return "Low Confidence";
 }
 
 export default App;

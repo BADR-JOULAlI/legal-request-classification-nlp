@@ -4,6 +4,8 @@ This repository contains a text classification project for categorizing legal qu
 
 The repository also includes a small React and Node.js application for testing the published model through a browser interface.
 
+Full project documentation is available in [PROJECT_DOCUMENTATION.md](PROJECT_DOCUMENTATION.md).
+
 ## Project Scope
 
 The classifier is trained on a subset of the `jonathanli/law-stack-exchange` dataset. Four legal categories are used:
